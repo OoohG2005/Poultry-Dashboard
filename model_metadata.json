@@ -1,0 +1,30 @@
+{
+  "training_date": "2026-07-08T14:21:47.416842",
+  "accuracy": 0.9982668977469671,
+  "features": [
+    "temperature",
+    "humidity",
+    "ammonia",
+    "co2",
+    "water_level",
+    "feed_level",
+    "light_intensity",
+    "air_quality"
+  ],
+  "feature_importance": {
+    "temperature": 0.1846923877748596,
+    "humidity": 0.18261226602515207,
+    "ammonia": 0.35315463103563405,
+    "co2": 0.1352596040206368,
+    "water_level": 0.043518677519186116,
+    "feed_level": 0.04171633968363447,
+    "light_intensity": 0.046246701269526465,
+    "air_quality": 0.01279939267137039
+  },
+  "samples_used": 2881,
+  "risk_distribution": {
+    "0": 2697,
+    "1": 180,
+    "2": 4
+  }
+}
