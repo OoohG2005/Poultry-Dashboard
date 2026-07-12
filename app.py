@@ -85,7 +85,7 @@ if 'thresholds' not in st.session_state:
         'light_min': 200, 'light_max': 800
     }
 
-# ==================== CSS: MOBILE APP STYLE ====================
+# ==================== CSS: RESPONSIVE APP STYLE ====================
 st.markdown("""
 <style>
     /* Hide Streamlit default elements */
@@ -95,10 +95,8 @@ st.markdown("""
     .stDeployButton {display: none;}
     .stAppToolbar {display: none;}
     
-    /* Make app full screen and center like a phone */
+    /* Responsive container: phone-like on small screens, full on large */
     .stApp {
-        max-width: 480px;
-        margin: 0 auto;
         background: #f8f9fa;
         height: 100vh;
         overflow-y: auto;
@@ -110,6 +108,16 @@ st.markdown("""
     .block-container {
         padding: 0.8rem 1rem 5.5rem 1rem !important;
         max-width: 100% !important;
+    }
+    
+    @media (max-width: 768px) {
+        .stApp {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        .block-container {
+            padding: 0.8rem 1rem 5.5rem 1rem !important;
+        }
     }
     
     /* Hide scrollbar */
@@ -134,56 +142,6 @@ st.markdown("""
     .app-header span {
         font-size: 0.8rem;
         opacity: 0.8;
-    }
-    
-    /* Bottom Navigation */
-    .bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        max-width: 480px;
-        background: white;
-        display: flex;
-        justify-content: space-around;
-        padding: 0.4rem 0;
-        border-top: 1px solid #e0e0e0;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-        z-index: 999;
-        border-radius: 16px 16px 0 0;
-    }
-    .bottom-nav button {
-        background: transparent;
-        border: none;
-        padding: 0.3rem 0.8rem;
-        border-radius: 8px;
-        font-size: 0.7rem;
-        color: #7f8c8d;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.1rem;
-        transition: all 0.2s;
-        cursor: pointer;
-    }
-    .bottom-nav button:hover {
-        background: #f0f0f0;
-    }
-    .bottom-nav .nav-icon {
-        font-size: 1.5rem;
-        line-height: 1;
-    }
-    .bottom-nav .nav-label {
-        font-size: 0.6rem;
-        font-weight: 500;
-    }
-    .bottom-nav .active {
-        color: #1a3c5e;
-        font-weight: 600;
-    }
-    .bottom-nav .active .nav-label {
-        color: #1a3c5e;
     }
     
     /* Cards */
@@ -330,6 +288,33 @@ st.markdown("""
     .js-plotly-plot .plotly .main-svg {
         border-radius: 10px !important;
     }
+    
+    /* Bottom navigation buttons */
+    .nav-btn {
+        background: transparent !important;
+        border: none !important;
+        text-align: center;
+        padding: 0.3rem 0.5rem;
+        color: #7f8c8d;
+        font-size: 0.7rem;
+        font-weight: 500;
+        width: 100%;
+        border-radius: 8px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .nav-btn:hover {
+        background: #f0f0f0 !important;
+    }
+    .nav-btn.active {
+        color: #1a3c5e;
+        font-weight: 600;
+    }
+    .nav-icon {
+        font-size: 1.5rem;
+        display: block;
+        line-height: 1.2;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -378,14 +363,6 @@ def get_sensor_status(value, good_range):
     else:
         return 'good'
 
-def nav_button(label, icon, page_name):
-    active = st.session_state.page == page_name
-    if st.button(f"{icon}", key=f"nav_{page_name}", use_container_width=True):
-        st.session_state.page = page_name
-        st.rerun()
-    # Label below icon
-    st.markdown(f"<div style='text-align:center;font-size:0.6rem;color:{'#1a3c5e' if active else '#7f8c8d'};font-weight:{'600' if active else '400'};'>{label}</div>", unsafe_allow_html=True)
-
 # ==================== DATA ====================
 latest = st.session_state.latest_reading
 prediction = st.session_state.predictor.predict(latest)
@@ -407,10 +384,37 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ==================== PAGES ====================
+# ==================== NAVIGATION BAR (BOTTOM) ====================
+# We'll place the navigation buttons at the bottom using st.columns.
+# But we need to render them after the page content.
+# We'll define a function to render the nav bar at the bottom.
+
+def render_nav():
+    nav_items = [
+        {"label": "Home", "icon": "🏠", "page": "Home"},
+        {"label": "Sensors", "icon": "📊", "page": "Sensors"},
+        {"label": "Control", "icon": "⚙️", "page": "Actuators"},
+        {"label": "Alerts", "icon": "🔔", "page": "Alerts"},
+        {"label": "Settings", "icon": "👤", "page": "Settings"}
+    ]
+    cols = st.columns(len(nav_items))
+    for col, item in zip(cols, nav_items):
+        with col:
+            active = st.session_state.page == item["page"]
+            btn_style = "nav-btn active" if active else "nav-btn"
+            if st.button(
+                f"{item['icon']}\n{item['label']}",
+                key=f"nav_{item['page']}",
+                use_container_width=True,
+                type="secondary" if not active else "primary"
+            ):
+                st.session_state.page = item["page"]
+                st.rerun()
+            # We can also display label separately, but button text with newline works.
+
+# ==================== PAGE RENDER ====================
 page = st.session_state.page
 
-# ---------- HOME PAGE ----------
 if page == "Home":
     # Health Score
     col1, col2 = st.columns(2)
@@ -503,7 +507,6 @@ if page == "Home":
     else:
         st.success("✅ All clear! No alerts.")
 
-# ---------- SENSORS PAGE ----------
 elif page == "Sensors":
     st.markdown('<div class="card-title">All Sensors</div>', unsafe_allow_html=True)
     
@@ -555,7 +558,6 @@ elif page == "Sensors":
     fig.update_traces(line=dict(color='#2980b9', width=2))
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------- ACTUATORS PAGE ----------
 elif page == "Actuators":
     st.markdown('<div class="card-title">Control Status</div>', unsafe_allow_html=True)
     
@@ -599,7 +601,6 @@ elif page == "Actuators":
     </div>
     """, unsafe_allow_html=True)
 
-# ---------- ALERTS PAGE ----------
 elif page == "Alerts":
     st.markdown('<div class="card-title">Notifications</div>', unsafe_allow_html=True)
     
@@ -649,7 +650,6 @@ elif page == "Alerts":
         for entry in st.session_state.action_log[:10]:
             st.markdown(f'<div class="log-entry" style="padding:0.3rem 0;border-bottom:1px solid #ecf0f1;font-size:0.8rem;">{entry}</div>', unsafe_allow_html=True)
 
-# ---------- SETTINGS PAGE ----------
 elif page == "Settings":
     st.markdown('<div class="card-title">Farm Settings</div>', unsafe_allow_html=True)
     
@@ -710,30 +710,9 @@ elif page == "Settings":
                 st.rerun()
 
 # ==================== BOTTOM NAVIGATION ====================
-st.markdown("""
-<div class="bottom-nav">
-    <button onclick="window.location.href='?page=Home'" class="nav-item">
-        <div class="nav-icon">🏠</div>
-        <div class="nav-label">Home</div>
-    </button>
-    <button onclick="window.location.href='?page=Sensors'" class="nav-item">
-        <div class="nav-icon">📊</div>
-        <div class="nav-label">Sensors</div>
-    </button>
-    <button onclick="window.location.href='?page=Actuators'" class="nav-item">
-        <div class="nav-icon">⚙️</div>
-        <div class="nav-label">Control</div>
-    </button>
-    <button onclick="window.location.href='?page=Alerts'" class="nav-item">
-        <div class="nav-icon">🔔</div>
-        <div class="nav-label">Alerts</div>
-    </button>
-    <button onclick="window.location.href='?page=Settings'" class="nav-item">
-        <div class="nav-icon">👤</div>
-        <div class="nav-label">Settings</div>
-    </button>
-</div>
-""", unsafe_allow_html=True)
+# Render navigation at the bottom
+st.markdown("---")
+render_nav()
 
 # ==================== FOOTER ====================
 st.markdown("""
