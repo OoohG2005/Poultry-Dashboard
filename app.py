@@ -4,7 +4,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import time
-import json
 import re
 import numpy as np
 
@@ -14,110 +13,130 @@ from model import PoultryDiseasePredictor
 
 # Page Configuration
 st.set_page_config(
-    page_title="🐔 Smart Poultry Monitoring System",
+    page_title="Smart Poultry Monitoring System",
     page_icon="🐔",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS - Professional, Clean Design
 st.markdown("""
 <style>
     .main-header {
-        font-size: 2.5rem;
-        color: #2E4057;
+        font-size: 2.2rem;
+        color: #1a3c5e;
         text-align: center;
         padding: 1rem 0;
-        font-weight: bold;
+        font-weight: 700;
+        letter-spacing: 1px;
     }
     .sub-header {
-        font-size: 1.2rem;
+        font-size: 1rem;
         color: #6B7B8D;
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
+        font-weight: 400;
     }
     .status-healthy {
-        background: linear-gradient(135deg, #28a745, #20c997);
-        padding: 1.5rem;
-        border-radius: 15px;
+        background: linear-gradient(135deg, #27ae60, #2ecc71);
+        padding: 1.2rem;
+        border-radius: 12px;
         color: white;
         text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(39,174,96,0.3);
     }
     .status-warning {
-        background: linear-gradient(135deg, #ffc107, #fd7e14);
-        padding: 1.5rem;
-        border-radius: 15px;
-        color: black;
+        background: linear-gradient(135deg, #f39c12, #f1c40f);
+        padding: 1.2rem;
+        border-radius: 12px;
+        color: #1a1a2e;
         text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(243,156,18,0.3);
     }
     .status-danger {
-        background: linear-gradient(135deg, #dc3545, #e74c3c);
-        padding: 1.5rem;
-        border-radius: 15px;
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        padding: 1.2rem;
+        border-radius: 12px;
         color: white;
         text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(231,76,60,0.3);
     }
     .actuator-on {
-        background-color: #28a745;
+        background: #27ae60;
         color: white;
-        padding: 0.5rem;
-        border-radius: 10px;
+        padding: 0.6rem;
+        border-radius: 8px;
         text-align: center;
-        font-weight: bold;
-    }
-    .actuator-off {
-        background-color: #6c757d;
-        color: white;
-        padding: 0.5rem;
-        border-radius: 10px;
-        text-align: center;
-        font-weight: bold;
-    }
-    .log-entry {
-        padding: 0.3rem;
-        border-bottom: 1px solid #eee;
+        font-weight: 600;
         font-size: 0.9rem;
     }
-    /* Sensor card styling */
+    .actuator-off {
+        background: #7f8c8d;
+        color: white;
+        padding: 0.6rem;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .log-entry {
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #ecf0f1;
+        font-size: 0.85rem;
+        color: #2c3e50;
+    }
     .sensor-card {
         background: white;
-        border-radius: 12px;
-        padding: 0.8rem;
+        border-radius: 10px;
+        padding: 1rem;
         text-align: center;
-        border: 1px solid #e8e8e8;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        transition: transform 0.2s;
+        border: 1px solid #ecf0f1;
+        transition: all 0.2s;
         height: 100%;
     }
     .sensor-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-color: #bdc3c7;
     }
     .sensor-value {
         font-size: 1.8rem;
-        font-weight: bold;
+        font-weight: 700;
+        color: #2c3e50;
         margin: 0.2rem 0;
     }
     .sensor-label {
         font-size: 0.85rem;
-        color: #6B7B8D;
+        color: #7f8c8d;
         font-weight: 500;
     }
     .sensor-unit {
+        font-size: 0.75rem;
+        color: #95a5a6;
+    }
+    .sensor-status-good { color: #27ae60; }
+    .sensor-status-warning { color: #f39c12; }
+    .sensor-status-danger { color: #e74c3c; }
+    .footer {
+        text-align: center;
+        color: #95a5a6;
         font-size: 0.8rem;
-        color: #9AA6B2;
+        padding: 1rem 0;
+        border-top: 1px solid #ecf0f1;
+        margin-top: 2rem;
     }
-    .sensor-status-ok {
-        color: #28a745;
+    .contact-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 0.8rem;
+        border-left: 3px solid #2980b9;
+        margin: 0.3rem 0;
     }
-    .sensor-status-warning {
-        color: #ffc107;
-    }
-    .sensor-status-danger {
-        color: #dc3545;
+    .notification-sent {
+        background: #d4edda;
+        border-radius: 4px;
+        padding: 0.3rem 0.6rem;
+        color: #155724;
+        font-size: 0.8rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -127,19 +146,16 @@ if 'generator' not in st.session_state:
     st.session_state.generator = PoultrySensorData()
 
 if 'data' not in st.session_state:
-    with st.spinner("🔄 Generating sensor data..."):
+    with st.spinner("Loading sensor data from Google Sheets..."):
         st.session_state.data = st.session_state.generator.generate_data(days=30)
 
 if 'predictor' not in st.session_state:
     st.session_state.predictor = PoultryDiseasePredictor()
-    with st.spinner("🤖 Training AI model..."):
+    with st.spinner("Training AI model..."):
         st.session_state.predictor.train(st.session_state.data)
 
 if 'latest_reading' not in st.session_state:
     st.session_state.latest_reading = get_latest_reading(st.session_state.data)
-
-if 'prediction_history' not in st.session_state:
-    st.session_state.prediction_history = []
 
 if 'action_log' not in st.session_state:
     st.session_state.action_log = []
@@ -147,315 +163,235 @@ if 'action_log' not in st.session_state:
 if 'data_logged' not in st.session_state:
     st.session_state.data_logged = 0
 
+if 'notifications_sent' not in st.session_state:
+    st.session_state.notifications_sent = []
+
 # Farm Profile
 if 'farm_name' not in st.session_state:
-    st.session_state.farm_name = "My Poultry Farm"
+    st.session_state.farm_name = "Green Valley Poultry Farm"
 if 'bird_count' not in st.session_state:
-    st.session_state.bird_count = 1500
+    st.session_state.bird_count = 2000
+if 'bird_age' not in st.session_state:
+    st.session_state.bird_age = "4 weeks"
+if 'bird_type' not in st.session_state:
+    st.session_state.bird_type = "Broiler"
 
-# Function to determine actuator states
-def get_actuator_states(latest):
+# Notification Contacts
+if 'farmer_name' not in st.session_state:
+    st.session_state.farmer_name = "John Banda"
+if 'farmer_email' not in st.session_state:
+    st.session_state.farmer_email = "farmer@example.com"
+if 'farmer_phone' not in st.session_state:
+    st.session_state.farmer_phone = "+265 999 111 111"
+
+if 'vet_name' not in st.session_state:
+    st.session_state.vet_name = "Dr. Mary Phiri"
+if 'vet_email' not in st.session_state:
+    st.session_state.vet_email = "vet@example.com"
+if 'vet_phone' not in st.session_state:
+    st.session_state.vet_phone = "+265 999 222 222"
+
+# Thresholds
+if 'thresholds' not in st.session_state:
+    st.session_state.thresholds = {
+        'temp_min': 20, 'temp_max': 30,
+        'humidity_min': 60, 'humidity_max': 80,
+        'ammonia_max': 10,
+        'co2_max': 1000,
+        'water_min': 30,
+        'feed_min': 25,
+        'light_min': 200, 'light_max': 800
+    }
+
+def get_actuator_states(latest, thresholds):
+    """Determine actuator states based on sensor readings and thresholds"""
     states = {}
-    states['Cooling Fan'] = 'ON' if latest['temperature'] > 30 else 'OFF'
-    states['Heater'] = 'ON' if latest['temperature'] < 20 else 'OFF'
-    states['Ventilation'] = 'ON' if (latest['humidity'] > 85 or latest['ammonia'] > 10 or latest['co2'] > 1000) else 'OFF'
-    states['Water Pump'] = 'ON' if latest['water_level'] < 30 else 'OFF'
+    t = thresholds
+    states['Cooling Fan'] = 'ON' if latest['temperature'] > t['temp_max'] else 'OFF'
+    states['Heater'] = 'ON' if latest['temperature'] < t['temp_min'] else 'OFF'
+    states['Ventilation'] = 'ON' if (latest['humidity'] > t['humidity_max'] or 
+                                      latest['ammonia'] > t['ammonia_max'] or 
+                                      latest['co2'] > t['co2_max']) else 'OFF'
+    states['Water Pump'] = 'ON' if latest['water_level'] < t['water_min'] else 'OFF'
     states['Alarm'] = 'ON' if latest.get('risk_label', 0) == 2 else 'OFF'
-    states['Lighting'] = 'ON' if latest['light_intensity'] < 200 else 'OFF'
+    states['Lighting'] = 'ON' if latest['light_intensity'] < t['light_min'] else 'OFF'
     return states
 
 def log_action(message):
     timestamp = datetime.now().strftime("%H:%M:%S")
-    st.session_state.action_log.insert(0, f"[{timestamp}] {message}")
+    st.session_state.action_log.insert(0, f"{timestamp} - {message}")
     if len(st.session_state.action_log) > 20:
         st.session_state.action_log.pop()
 
-def log_to_google_sheets(latest):
-    st.session_state.data_logged += 1
-    log_action(f"Data point logged to Google Sheets (ID: {st.session_state.data_logged})")
+def send_notification(recipient_type, recipient_name, email, phone, subject, message):
+    """Simulate sending notification and log it"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    notification = {
+        'timestamp': timestamp,
+        'recipient_type': recipient_type,
+        'recipient_name': recipient_name,
+        'email': email,
+        'phone': phone,
+        'subject': subject,
+        'message': message
+    }
+    st.session_state.notifications_sent.insert(0, notification)
+    if len(st.session_state.notifications_sent) > 50:
+        st.session_state.notifications_sent.pop()
+    
+    log_action(f"📧 Notification sent to {recipient_type}: {recipient_name}")
+    return True
 
-# Function to create sensor gauge
-def create_sensor_gauge(value, min_val, max_val, title, unit, good_range):
-    """Create a gauge chart for a sensor reading"""
-    # Determine color based on value position
+def get_sensor_status(value, good_range):
+    """Determine sensor status: good, warning, danger"""
     if value < good_range[0] or value > good_range[1]:
-        color = "#dc3545"  # Red - danger
-    elif value < good_range[0] + (good_range[1] - good_range[0]) * 0.2 or value > good_range[1] - (good_range[1] - good_range[0]) * 0.2:
-        color = "#ffc107"  # Yellow - warning
+        return 'danger'
+    elif value < good_range[0] + (good_range[1] - good_range[0]) * 0.15 or value > good_range[1] - (good_range[1] - good_range[0]) * 0.15:
+        return 'warning'
     else:
-        color = "#28a745"  # Green - good
-    
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=value,
-        title={'text': title, 'font': {'size': 14}},
-        domain={'x': [0, 1], 'y': [0, 1]},
-        gauge={
-            'axis': {'range': [min_val, max_val], 'tickwidth': 1, 'tickcolor': "darkgray"},
-            'bar': {'color': color},
-            'bgcolor': "white",
-            'borderwidth': 0,
-            'steps': [
-                {'range': [min_val, good_range[0]], 'color': 'rgba(220, 53, 69, 0.2)'},
-                {'range': [good_range[0], good_range[1]], 'color': 'rgba(40, 167, 69, 0.15)'},
-                {'range': [good_range[1], max_val], 'color': 'rgba(220, 53, 69, 0.2)'}
-            ],
-            'threshold': {
-                'line': {'color': "red", 'width': 2},
-                'thickness': 0.75,
-                'value': good_range[1]
-            }
-        }
-    ))
-    fig.update_layout(
-        height=140,
-        margin=dict(l=10, r=10, t=40, b=10),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
-    )
-    return fig
+        return 'good'
 
-# Sidebar
+# ================== SIDEBAR ==================
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/590/590167.png", width=80)
-    st.title("🐔 Smart Poultry")
-    st.subheader("AI Monitoring System v2.0")
-    
+    st.markdown("### Smart Poultry")
+    st.markdown("**AI Monitoring System**")
     st.markdown("---")
     
-    st.markdown("### 🏠 Farm Profile")
+    # Farm Profile
+    st.markdown("#### Farm Profile")
     farm_name_input = st.text_input("Farm Name", value=st.session_state.farm_name)
     bird_count_input = st.number_input("Bird Count", min_value=0, max_value=100000, value=st.session_state.bird_count, step=100)
-    if farm_name_input != st.session_state.farm_name or bird_count_input != st.session_state.bird_count:
+    bird_age_input = st.selectbox("Bird Age", ["Day-old", "1 week", "2 weeks", "3 weeks", "4 weeks", "5 weeks", "6 weeks+"], 
+                                   index=["Day-old", "1 week", "2 weeks", "3 weeks", "4 weeks", "5 weeks", "6 weeks+"].index(st.session_state.bird_age))
+    bird_type_input = st.selectbox("Bird Type", ["Broiler", "Layer", "Dual Purpose"], 
+                                    index=["Broiler", "Layer", "Dual Purpose"].index(st.session_state.bird_type))
+    
+    if farm_name_input != st.session_state.farm_name or bird_count_input != st.session_state.bird_count or bird_age_input != st.session_state.bird_age or bird_type_input != st.session_state.bird_type:
         st.session_state.farm_name = farm_name_input
         st.session_state.bird_count = bird_count_input
-    st.info(f"📊 {st.session_state.bird_count:,} birds on {st.session_state.farm_name}")
+        st.session_state.bird_age = bird_age_input
+        st.session_state.bird_type = bird_type_input
+        st.rerun()
+    
+    st.info(f"{bird_count_input:,} birds | Age: {bird_age_input} | Type: {bird_type_input}")
     
     st.markdown("---")
     
-    st.markdown("### 🎮 Controls")
+    # ================== NOTIFICATION CONTACTS ==================
+    st.markdown("#### 📧 Notification Contacts")
+    st.caption("These contacts will receive alerts")
+    
+    with st.expander("Farmer Contact", expanded=True):
+        farmer_name = st.text_input("Farmer Name", value=st.session_state.farmer_name)
+        farmer_email = st.text_input("Farmer Email", value=st.session_state.farmer_email)
+        farmer_phone = st.text_input("Farmer Phone", value=st.session_state.farmer_phone)
+        farmer_sms = st.checkbox("Send SMS to Farmer", value=True)
+        farmer_email_check = st.checkbox("Send Email to Farmer", value=True)
+    
+    with st.expander("Veterinarian Contact", expanded=True):
+        vet_name = st.text_input("Veterinarian Name", value=st.session_state.vet_name)
+        vet_email = st.text_input("Veterinarian Email", value=st.session_state.vet_email)
+        vet_phone = st.text_input("Veterinarian Phone", value=st.session_state.vet_phone)
+        vet_sms = st.checkbox("Send SMS to Vet", value=True)
+        vet_email_check = st.checkbox("Send Email to Vet", value=True)
+    
+    # Save contacts button
+    if st.button("💾 Save Contacts", use_container_width=True):
+        st.session_state.farmer_name = farmer_name
+        st.session_state.farmer_email = farmer_email
+        st.session_state.farmer_phone = farmer_phone
+        st.session_state.vet_name = vet_name
+        st.session_state.vet_email = vet_email
+        st.session_state.vet_phone = vet_phone
+        log_action("Contacts updated successfully")
+        st.success("✅ Contacts saved!")
+        st.rerun()
+    
+    st.markdown("---")
+    
+    # Controls
+    st.markdown("#### Controls")
     col1, col2 = st.columns(2)
     with col1:
         if st.button("🔄 Refresh", use_container_width=True):
-            with st.spinner("Refreshing data..."):
-                st.session_state.data = st.session_state.generator.generate_data(days=30)
-                st.session_state.latest_reading = get_latest_reading(st.session_state.data)
-                log_action("Data refreshed manually")
-                st.rerun()
-    
+            st.session_state.data = st.session_state.generator.generate_data(days=30)
+            st.session_state.latest_reading = get_latest_reading(st.session_state.data)
+            log_action("Manual data refresh")
+            st.rerun()
     with col2:
         if st.button("🤖 Retrain AI", use_container_width=True):
-            with st.spinner("Retraining model..."):
+            with st.spinner("Retraining..."):
                 st.session_state.predictor.train(st.session_state.data)
                 log_action("AI model retrained")
                 st.rerun()
     
     st.markdown("---")
     
-    st.markdown("### 📊 Data Range")
-    days = st.slider("Select days to view:", 1, 30, 7, key="days_slider")
+    # Data Range
+    st.markdown("#### Data Range")
+    days = st.slider("View past days:", 1, 30, 7)
     
     st.markdown("---")
     
-    st.markdown("### 🧪 Test Conditions")
-    st.caption("Click to force specific conditions")
-    
-    test_col1, test_col2, test_col3 = st.columns(3)
-    
-    with test_col1:
-        if st.button("✅ Healthy", use_container_width=True):
-            with st.spinner("Setting Healthy conditions..."):
-                df = st.session_state.data.copy()
-                df['temperature'] = 24 + np.random.normal(0, 1, len(df))
-                df['humidity'] = 60 + np.random.normal(0, 5, len(df))
-                df['ammonia'] = 3 + np.random.normal(0, 1, len(df))
-                df['co2'] = 500 + np.random.normal(0, 50, len(df))
-                df['water_level'] = 80 + np.random.normal(0, 5, len(df))
-                df['feed_level'] = 75 + np.random.normal(0, 5, len(df))
-                df['light_intensity'] = 500 + np.random.normal(0, 50, len(df))
-                df['air_quality'] = 200 + np.random.normal(0, 20, len(df))
-                df['risk_label'] = 0
-                st.session_state.data = df
-                st.session_state.latest_reading = get_latest_reading(df)
-                log_action("Test: Healthy conditions applied")
-                st.rerun()
-    
-    with test_col2:
-        if st.button("⚠️ Warning", use_container_width=True):
-            with st.spinner("Setting Warning conditions..."):
-                df = st.session_state.data.copy()
-                df['temperature'] = 29 + np.random.normal(0, 1, len(df))
-                df['humidity'] = 80 + np.random.normal(0, 3, len(df))
-                df['ammonia'] = 8 + np.random.normal(0, 1, len(df))
-                df['co2'] = 800 + np.random.normal(0, 50, len(df))
-                df['water_level'] = 50 + np.random.normal(0, 5, len(df))
-                df['feed_level'] = 45 + np.random.normal(0, 5, len(df))
-                df['light_intensity'] = 400 + np.random.normal(0, 50, len(df))
-                df['air_quality'] = 300 + np.random.normal(0, 20, len(df))
-                df['risk_label'] = 1
-                st.session_state.data = df
-                st.session_state.latest_reading = get_latest_reading(df)
-                log_action("Test: Warning conditions applied")
-                st.rerun()
-    
-    with test_col3:
-        if st.button("🚨 Disease", use_container_width=True):
-            with st.spinner("Setting Disease Risk conditions..."):
-                df = st.session_state.data.copy()
-                df['temperature'] = 33 + np.random.normal(0, 1, len(df))
-                df['humidity'] = 90 + np.random.normal(0, 3, len(df))
-                df['ammonia'] = 15 + np.random.normal(0, 2, len(df))
-                df['co2'] = 1200 + np.random.normal(0, 100, len(df))
-                df['water_level'] = 30 + np.random.normal(0, 5, len(df))
-                df['feed_level'] = 25 + np.random.normal(0, 5, len(df))
-                df['light_intensity'] = 300 + np.random.normal(0, 50, len(df))
-                df['air_quality'] = 400 + np.random.normal(0, 20, len(df))
-                df['risk_label'] = 2
-                st.session_state.data = df
-                st.session_state.latest_reading = get_latest_reading(df)
-                log_action("Test: Disease Risk conditions applied")
-                st.rerun()
+    # System Status
+    st.markdown("#### System Status")
+    st.success("✅ Online")
+    st.info(f"Records: {len(st.session_state.data)}")
+    st.info(f"Last Update: {datetime.now().strftime('%H:%M:%S')}")
     
     st.markdown("---")
     
-    st.markdown("### ⏱️ Auto Refresh")
-    auto_refresh = st.checkbox("Enable Auto Refresh (every 10 seconds)")
-    if auto_refresh:
-        st.session_state.data = st.session_state.generator.generate_data(days=30)
-        st.session_state.latest_reading = get_latest_reading(st.session_state.data)
-        log_to_google_sheets(st.session_state.latest_reading)
-        time.sleep(10)
-        st.rerun()
-    
-    st.markdown("---")
-    
-    st.markdown("### 📋 System Status")
-    st.success("✅ System Running")
-    st.info(f"📡 {len(st.session_state.data)} Records")
-    st.info(f"🕒 Updated: {datetime.now().strftime('%H:%M:%S')}")
-    st.info(f"📤 Data Logged: {st.session_state.data_logged} entries")
-    
-    st.markdown("---")
-    
-    st.markdown("### 🤖 AI Model Info")
+    # AI Model Info
+    st.markdown("#### AI Model")
     model_info = st.session_state.predictor.get_model_info()
     if model_info and model_info.get('accuracy'):
-        st.metric("Model Accuracy", f"{model_info['accuracy']:.1%}")
+        st.metric("Accuracy", f"{model_info['accuracy']:.1%}")
     
     st.markdown("---")
+    
+    # Export
     if st.button("📥 Export Data", use_container_width=True):
         csv = st.session_state.data.to_csv(index=False)
         st.download_button(
             label="Download CSV",
             data=csv,
-            file_name=f"poultry_data_{datetime.now().strftime('%Y%m%d')}.csv",
+            file_name=f"sensor_data_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
             use_container_width=True
         )
 
 # ================== MAIN CONTENT ==================
-st.markdown('<h1 class="main-header">🐔 Smart Poultry House Monitoring System</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">AI-Powered Environmental Monitoring, Automated Control & Data Logging</p>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">Smart Poultry House Monitoring System</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">AI-Powered Environmental Monitoring & Automated Control</p>', unsafe_allow_html=True)
 
-# --- HEALTH GAUGE & FARM STATS ---
+# Get data
 latest = st.session_state.latest_reading
 prediction = st.session_state.predictor.predict(latest)
+actuator_states = get_actuator_states(latest, st.session_state.thresholds)
 
-health_score = 100 - (prediction['probabilities']['Disease Risk'] / 1)
-health_score = max(0, min(100, health_score))
-
-col_gauge1, col_gauge2, col_gauge3 = st.columns([1, 1, 1])
-with col_gauge1:
-    fig_gauge = go.Figure(go.Indicator(
-        mode="gauge+number+delta",
-        value=health_score,
-        title={'text': "🏥 Farm Health Score"},
-        gauge={
-            'axis': {'range': [0, 100]},
-            'steps': [
-                {'range': [0, 40], 'color': "green"},
-                {'range': [40, 70], 'color': "yellow"},
-                {'range': [70, 100], 'color': "red"}
-            ],
-            'threshold': {
-                'line': {'color': "red", 'width': 4},
-                'thickness': 0.75,
-                'value': 80
-            }
-        },
-        delta={'reference': 80, 'increasing': {'color': "green"}, 'decreasing': {'color': "red"}}
-    ))
-    fig_gauge.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
-    st.plotly_chart(fig_gauge, use_container_width=True)
-
-with col_gauge2:
-    st.markdown("#### 📋 Farm Snapshot")
-    st.metric("Farm Name", st.session_state.farm_name)
-    st.metric("Birds", f"{st.session_state.bird_count:,}")
-    st.metric("House Status", "✅ Active")
-
-with col_gauge3:
-    st.markdown("#### 📊 Quick Stats")
-    risk_label = prediction['status']
-    st.metric("Current Risk", risk_label, delta="⚠️" if risk_label != "Healthy" else "✅")
-    st.metric("Confidence", f"{prediction['confidence']:.1f}%")
-    st.metric("Records", len(st.session_state.data))
-
-st.markdown("---")
-
-# --- IMPROVED SENSOR READINGS WITH GAUGES ---
-st.markdown("### 🌡️ Sensor Readings Dashboard")
-
-# Define sensor configurations
-sensor_configs = [
-    {'key': 'temperature', 'label': '🌡️ Temperature', 'unit': '°C', 'min': 15, 'max': 40, 'good': (20, 30)},
-    {'key': 'humidity', 'label': '💧 Humidity', 'unit': '%', 'min': 30, 'max': 95, 'good': (60, 80)},
-    {'key': 'ammonia', 'label': '💨 Ammonia', 'unit': 'ppm', 'min': 0, 'max': 30, 'good': (0, 10)},
-    {'key': 'co2', 'label': '🫧 CO2', 'unit': 'ppm', 'min': 300, 'max': 2000, 'good': (300, 1000)},
-    {'key': 'water_level', 'label': '💦 Water Level', 'unit': '%', 'min': 0, 'max': 100, 'good': (30, 100)},
-    {'key': 'feed_level', 'label': '🌾 Feed Level', 'unit': '%', 'min': 0, 'max': 100, 'good': (25, 100)},
-    {'key': 'light_intensity', 'label': '💡 Light Intensity', 'unit': 'lux', 'min': 0, 'max': 1000, 'good': (200, 800)},
-    {'key': 'air_quality', 'label': '🌬️ Air Quality', 'unit': '', 'min': 0, 'max': 500, 'good': (0, 300)}
-]
-
-# Display sensors in a 4-column grid with gauges
-for i in range(0, len(sensor_configs), 4):
-    cols = st.columns(4)
-    for j in range(4):
-        idx = i + j
-        if idx < len(sensor_configs):
-            config = sensor_configs[idx]
-            value = latest[config['key']]
-            
-            with cols[j]:
-                # Create gauge for this sensor
-                fig = create_sensor_gauge(
-                    value=value,
-                    min_val=config['min'],
-                    max_val=config['max'],
-                    title=config['label'],
-                    unit=config['unit'],
-                    good_range=config['good']
-                )
-                st.plotly_chart(fig, use_container_width=True)
-                
-                # Show value with status indicator
-                if value < config['good'][0] or value > config['good'][1]:
-                    status_icon = "🔴"
-                elif value < config['good'][0] + (config['good'][1] - config['good'][0]) * 0.2 or value > config['good'][1] - (config['good'][1] - config['good'][0]) * 0.2:
-                    status_icon = "🟡"
-                else:
-                    status_icon = "🟢"
-                
-                st.caption(f"{status_icon} Current: **{value:.1f}** {config['unit']}  |  Ideal: {config['good'][0]}–{config['good'][1]} {config['good'][0] != 0 and ' ' or ''}{config['unit']}")
-
-st.markdown("---")
-
-# Current Status Row (simplified)
-col1, col2, col3 = st.columns([1, 1.5, 1])
-
+# ================== FARM SNAPSHOT ==================
+st.markdown("#### Farm Snapshot")
+col1, col2, col3, col4, col5 = st.columns(5)
 with col1:
-    st.markdown("### 📊 Current Status")
+    st.metric("Farm", st.session_state.farm_name)
+with col2:
+    st.metric("Birds", f"{st.session_state.bird_count:,}")
+with col3:
+    st.metric("Age", st.session_state.bird_age)
+with col4:
+    st.metric("Type", st.session_state.bird_type)
+with col5:
+    status_icon = "✅" if prediction['status'] == 'Healthy' else ("⚠️" if prediction['status'] == 'Warning' else "🚨")
+    st.metric("Status", f"{status_icon} {prediction['status']}")
+
+st.markdown("---")
+
+# ================== AI STATUS & HEALTH SCORE ==================
+col_status, col_gauge = st.columns([1.2, 1])
+
+with col_status:
+    st.markdown("#### Current Status")
     status_class = {
         'Healthy': 'status-healthy',
         'Warning': 'status-warning',
@@ -468,14 +404,126 @@ with col1:
     }[prediction['status']]
     st.markdown(f"""
     <div class="{status_class}">
-        <h2>{status_icon} {prediction['status']}</h2>
-        <p style="font-size: 1.1rem;">Confidence: {prediction['confidence']:.1f}%</p>
-        <p style="font-size: 0.9rem; opacity: 0.9;">{datetime.now().strftime('%H:%M:%S')}</p>
+        <h2 style="margin:0;font-size:1.8rem;">{status_icon} {prediction['status']}</h2>
+        <p style="margin:0;font-size:1rem;">Confidence: {prediction['confidence']:.1f}%</p>
+        <p style="margin:0;font-size:0.85rem;opacity:0.9;">{datetime.now().strftime('%H:%M:%S')}</p>
     </div>
     """, unsafe_allow_html=True)
 
-with col2:
-    st.markdown("### 🤖 AI Prediction")
+with col_gauge:
+    health_score = 100 - (prediction['probabilities']['Disease Risk'] / 1)
+    health_score = max(0, min(100, health_score))
+    
+    fig_gauge = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=health_score,
+        title={'text': "Health Score", 'font': {'size': 14}},
+        gauge={
+            'axis': {'range': [0, 100]},
+            'steps': [
+                {'range': [0, 40], 'color': "#27ae60"},
+                {'range': [40, 70], 'color': "#f39c12"},
+                {'range': [70, 100], 'color': "#e74c3c"}
+            ],
+            'threshold': {
+                'line': {'color': "red", 'width': 4},
+                'thickness': 0.75,
+                'value': 80
+            }
+        }
+    ))
+    fig_gauge.update_layout(height=200, margin=dict(l=10, r=10, t=40, b=10))
+    st.plotly_chart(fig_gauge, use_container_width=True)
+
+st.markdown("---")
+
+# ================== CONTACT SUMMARY ==================
+st.markdown("#### Notification Contacts")
+col_farmer, col_vet = st.columns(2)
+
+with col_farmer:
+    st.markdown(f"""
+    <div class="contact-card">
+        <strong>👨‍🌾 Farmer</strong><br>
+        Name: {st.session_state.farmer_name}<br>
+        Email: {st.session_state.farmer_email}<br>
+        Phone: {st.session_state.farmer_phone}
+    </div>
+    """, unsafe_allow_html=True)
+
+with col_vet:
+    st.markdown(f"""
+    <div class="contact-card">
+        <strong>👨‍⚕️ Veterinarian</strong><br>
+        Name: {st.session_state.vet_name}<br>
+        Email: {st.session_state.vet_email}<br>
+        Phone: {st.session_state.vet_phone}
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# ================== SENSOR READINGS ==================
+st.markdown("#### Environmental Readings")
+
+sensor_configs = [
+    {'key': 'temperature', 'label': 'Temperature', 'unit': '°C', 'min': 15, 'max': 40, 'good': (20, 30)},
+    {'key': 'humidity', 'label': 'Humidity', 'unit': '%', 'min': 30, 'max': 95, 'good': (60, 80)},
+    {'key': 'ammonia', 'label': 'Ammonia', 'unit': 'ppm', 'min': 0, 'max': 30, 'good': (0, 10)},
+    {'key': 'co2', 'label': 'CO2', 'unit': 'ppm', 'min': 300, 'max': 2000, 'good': (300, 1000)},
+    {'key': 'water_level', 'label': 'Water Level', 'unit': '%', 'min': 0, 'max': 100, 'good': (30, 100)},
+    {'key': 'feed_level', 'label': 'Feed Level', 'unit': '%', 'min': 0, 'max': 100, 'good': (25, 100)},
+    {'key': 'light_intensity', 'label': 'Light Intensity', 'unit': 'lux', 'min': 0, 'max': 1000, 'good': (200, 800)},
+    {'key': 'air_quality', 'label': 'Air Quality', 'unit': '', 'min': 0, 'max': 500, 'good': (0, 300)}
+]
+
+for i in range(0, len(sensor_configs), 4):
+    cols = st.columns(4)
+    for j in range(4):
+        idx = i + j
+        if idx < len(sensor_configs):
+            config = sensor_configs[idx]
+            value = latest[config['key']]
+            status = get_sensor_status(value, config['good'])
+            
+            with cols[j]:
+                status_text = "Good" if status == 'good' else ("Warning" if status == 'warning' else "Danger")
+                status_color = "sensor-status-good" if status == 'good' else ("sensor-status-warning" if status == 'warning' else "sensor-status-danger")
+                
+                st.markdown(f"""
+                <div class="sensor-card">
+                    <div class="sensor-label">{config['label']}</div>
+                    <div class="sensor-value">{value:.1f} <span class="sensor-unit">{config['unit']}</span></div>
+                    <div class="{status_color}">● {status_text}</div>
+                    <div style="font-size:0.7rem;color:#95a5a6;margin-top:0.3rem;">
+                        Target: {config['good'][0]}–{config['good'][1]} {config['unit']}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# ================== ACTUATOR STATUS ==================
+st.markdown("#### Automated Control Status")
+
+actuator_names = list(actuator_states.keys())
+cols = st.columns(len(actuator_names))
+for i, (name, state) in enumerate(actuator_states.items()):
+    col = cols[i % len(actuator_names)]
+    with col:
+        if state == 'ON':
+            st.markdown(f'<div class="actuator-on">{name}: ACTIVE</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="actuator-off">{name}: STANDBY</div>', unsafe_allow_html=True)
+
+st.markdown("---")
+
+# ================== AI PREDICTION DETAILS ==================
+st.markdown("#### AI Risk Analysis")
+
+col_prob, col_risk = st.columns([1.2, 1])
+
+with col_prob:
     prob_data = pd.DataFrame({
         'Status': ['Healthy', 'Warning', 'Disease Risk'],
         'Probability': [
@@ -484,73 +532,39 @@ with col2:
             prediction['probabilities']['Disease Risk']
         ]
     })
-    colors = ['#28a745', '#ffc107', '#dc3545']
+    colors = ['#27ae60', '#f39c12', '#e74c3c']
     fig = px.bar(prob_data, x='Status', y='Probability', 
                  color='Status',
                  color_discrete_sequence=colors,
-                 title="Risk Probabilities",
                  text='Probability')
     fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
     fig.update_layout(height=200, showlegend=False, margin=dict(l=0, r=0, t=30, b=0))
     st.plotly_chart(fig, use_container_width=True)
 
-with col3:
-    st.markdown("#### 🔑 Key Risk Factors")
+with col_risk:
+    st.markdown("#### Key Risk Factors")
     importance = st.session_state.predictor.feature_importance
     if importance:
         sorted_importance = sorted(importance.items(), key=lambda x: x[1], reverse=True)[:4]
         for feature, score in sorted_importance:
-            st.progress(score, text=f"{feature.replace('_', ' ').title()}: {score:.1%}")
+            label = feature.replace('_', ' ').title()
+            st.progress(score, text=f"{label}: {score:.1%}")
 
-# Automated Control Section
 st.markdown("---")
-st.markdown("### ⚙️ Automated Control Actions")
 
-actuator_states = get_actuator_states(latest)
-cols = st.columns(6)
-for i, (name, state) in enumerate(actuator_states.items()):
-    col = cols[i % 6]
-    with col:
-        if state == 'ON':
-            st.markdown(f'<div class="actuator-on">{name}: 🔴 ON</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'<div class="actuator-off">{name}: ⚪ OFF</div>', unsafe_allow_html=True)
-
-# Log automatic actions
-if latest['temperature'] > 30 and actuator_states['Cooling Fan'] == 'ON':
-    log_action("Cooling Fan turned ON (temperature high)")
-elif latest['temperature'] < 20 and actuator_states['Heater'] == 'ON':
-    log_action("Heater turned ON (temperature low)")
-if latest['humidity'] > 85 and actuator_states['Ventilation'] == 'ON':
-    log_action("Ventilation turned ON (high humidity)")
-if latest['ammonia'] > 10 and actuator_states['Ventilation'] == 'ON':
-    log_action("Ventilation turned ON (high ammonia)")
-if latest['co2'] > 1000 and actuator_states['Ventilation'] == 'ON':
-    log_action("Ventilation turned ON (high CO2)")
-if latest['water_level'] < 30 and actuator_states['Water Pump'] == 'ON':
-    log_action("Water Pump turned ON (low water level)")
-if latest.get('risk_label', 0) == 2 and actuator_states['Alarm'] == 'ON':
-    log_action("⚠️ ALARM ACTIVATED - Disease Risk Detected!")
-
-# Charts Section
-st.markdown("---")
-st.markdown("### 📈 Environmental Trends")
+# ================== TRENDS CHARTS ==================
+st.markdown("#### Environmental Trends")
 
 recent_data = get_recent_data(st.session_state.data, hours=days*24)
 
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 All Parameters", 
-    "🌡️ Temperature & Humidity", 
-    "💨 Gas Levels", 
-    "📋 Risk Analysis"
-])
+tab1, tab2, tab3 = st.tabs(["All Parameters", "Temperature & Humidity", "Gas & Air Quality"])
 
 with tab1:
     fig = px.line(recent_data, x='timestamp', 
                   y=['temperature', 'humidity', 'ammonia', 'co2', 'air_quality'],
                   title="All Environmental Parameters",
                   labels={'value': 'Reading', 'variable': 'Parameter'})
-    fig.update_layout(height=400, hovermode='x unified')
+    fig.update_layout(height=350, hovermode='x unified')
     st.plotly_chart(fig, use_container_width=True)
 
 with tab2:
@@ -558,21 +572,21 @@ with tab2:
     fig.add_trace(go.Scatter(
         x=recent_data['timestamp'], 
         y=recent_data['temperature'],
-        name='Temperature (°C)', 
-        line=dict(color='red', width=2)
+        name='Temperature °C', 
+        line=dict(color='#e74c3c', width=2)
     ))
     fig.add_trace(go.Scatter(
         x=recent_data['timestamp'], 
         y=recent_data['humidity'],
-        name='Humidity (%)', 
-        line=dict(color='blue', width=2),
+        name='Humidity %', 
+        line=dict(color='#2980b9', width=2),
         yaxis='y2'
     ))
-    fig.add_hline(y=30, line_dash="dash", line_color="red", opacity=0.5)
-    fig.add_hline(y=85, line_dash="dash", line_color="orange", opacity=0.5)
+    fig.add_hline(y=st.session_state.thresholds['temp_max'], line_dash="dash", line_color="#e74c3c", opacity=0.5)
+    fig.add_hline(y=st.session_state.thresholds['humidity_max'], line_dash="dash", line_color="#f39c12", opacity=0.5)
     fig.update_layout(
         title='Temperature and Humidity Trends',
-        height=400,
+        height=350,
         yaxis=dict(title='Temperature (°C)', side='left'),
         yaxis2=dict(title='Humidity (%)', overlaying='y', side='right'),
         hovermode='x unified'
@@ -580,138 +594,183 @@ with tab2:
     st.plotly_chart(fig, use_container_width=True)
 
 with tab3:
-    fig = px.area(recent_data, x='timestamp', y=['ammonia', 'co2'],
-                  title="Gas Levels (Ammonia & CO2)",
-                  labels={'value': 'Level', 'variable': 'Gas'})
-    fig.add_hline(y=10, line_dash="dash", line_color="red", opacity=0.5)
-    fig.add_hline(y=1000, line_dash="dash", line_color="orange", opacity=0.5)
-    fig.update_layout(height=400, hovermode='x unified')
+    fig = px.area(recent_data, x='timestamp', y=['ammonia', 'co2', 'air_quality'],
+                  title="Gas Levels & Air Quality",
+                  labels={'value': 'Level', 'variable': 'Parameter'})
+    fig.add_hline(y=st.session_state.thresholds['ammonia_max'], line_dash="dash", line_color="#e74c3c", opacity=0.5)
+    fig.add_hline(y=st.session_state.thresholds['co2_max'], line_dash="dash", line_color="#f39c12", opacity=0.5)
+    fig.update_layout(height=350, hovermode='x unified')
     st.plotly_chart(fig, use_container_width=True)
 
-with tab4:
-    col1, col2 = st.columns(2)
-    with col1:
-        risk_counts = recent_data['risk_label'].value_counts()
-        risk_labels = {0: 'Healthy', 1: 'Warning', 2: 'Disease Risk'}
-        risk_df = pd.DataFrame({
-            'Status': [risk_labels[i] for i in risk_counts.index],
-            'Count': risk_counts.values
-        })
-        fig = px.pie(risk_df, values='Count', names='Status',
-                     title='Risk Distribution',
-                     color='Status',
-                     color_discrete_map={
-                         'Healthy': '#28a745',
-                         'Warning': '#ffc107',
-                         'Disease Risk': '#dc3545'
-                     })
-        fig.update_layout(height=350)
-        st.plotly_chart(fig, use_container_width=True)
-    with col2:
-        risk_over_time = recent_data[['timestamp', 'risk_label']].copy()
-        risk_over_time['Status'] = risk_over_time['risk_label'].map(risk_labels)
-        fig = px.scatter(risk_over_time, x='timestamp', y='risk_label',
-                         title='Risk Status Over Time',
-                         color='Status',
-                         color_discrete_map={
-                             'Healthy': '#28a745',
-                             'Warning': '#ffc107',
-                             'Disease Risk': '#dc3545'
-                         })
-        fig.update_layout(height=350, yaxis=dict(tickmode='array', tickvals=[0,1,2], ticktext=['Healthy', 'Warning', 'Disease Risk']))
-        st.plotly_chart(fig, use_container_width=True)
-
-# Alerts and Action Log
 st.markdown("---")
-col_alerts, col_log = st.columns(2)
+
+# ================== ALERTS & NOTIFICATIONS ==================
+col_alerts, col_log = st.columns([1.2, 1])
 
 with col_alerts:
-    st.markdown("### 🔔 Alerts & Recommendations")
+    st.markdown("#### Alerts & Recommendations")
+    
     alerts = []
     recommendations = []
+    should_notify = False
+    notification_message = ""
     
-    if latest['temperature'] > 30:
-        alerts.append("⚠️ **High Temperature**: Temperature is above 30°C")
-        recommendations.append("👉 Cooling fan activated automatically")
-    elif latest['temperature'] < 20:
-        alerts.append("⚠️ **Low Temperature**: Temperature is below 20°C")
-        recommendations.append("👉 Heater activated automatically")
+    t = st.session_state.thresholds
     
-    if latest['humidity'] > 85:
-        alerts.append("⚠️ **High Humidity**: Humidity is above 85%")
-        recommendations.append("👉 Ventilation system activated")
-    elif latest['humidity'] < 40:
-        alerts.append("⚠️ **Low Humidity**: Humidity is below 40%")
-        recommendations.append("👉 Water mist system recommended")
+    # Check parameters
+    if latest['temperature'] > t['temp_max']:
+        alerts.append("High Temperature - Above threshold")
+        recommendations.append("Cooling fans activated automatically")
+        should_notify = True
+        notification_message = f"Temperature is {latest['temperature']:.1f}°C (threshold: {t['temp_max']}°C)"
+    elif latest['temperature'] < t['temp_min']:
+        alerts.append("Low Temperature - Below threshold")
+        recommendations.append("Heaters activated automatically")
+        should_notify = True
+        notification_message = f"Temperature is {latest['temperature']:.1f}°C (threshold: {t['temp_min']}°C)"
     
-    if latest['ammonia'] > 10:
-        alerts.append("🚨 **Dangerous Ammonia**: Level above 10 ppm")
-        recommendations.append("👉 Immediate ventilation and litter management")
+    if latest['humidity'] > t['humidity_max']:
+        alerts.append("High Humidity - Above threshold")
+        recommendations.append("Ventilation system activated")
+        should_notify = True
+        notification_message += f" | Humidity: {latest['humidity']:.1f}%"
+    elif latest['humidity'] < t['humidity_min']:
+        alerts.append("Low Humidity - Below threshold")
+        recommendations.append("Consider adding moisture")
     
-    if latest['co2'] > 1000:
-        alerts.append("⚠️ **High CO2**: Level above 1000 ppm")
-        recommendations.append("👉 Increased fresh air intake")
+    if latest['ammonia'] > t['ammonia_max']:
+        alerts.append("Dangerous Ammonia Level")
+        recommendations.append("Immediate ventilation and litter management")
+        should_notify = True
+        notification_message = f"Ammonia: {latest['ammonia']:.1f} ppm (threshold: {t['ammonia_max']} ppm)"
     
-    if latest['water_level'] < 30:
-        alerts.append("⚠️ **Low Water**: Water level below 30%")
-        recommendations.append("👉 Water pump activated; check supply")
+    if latest['co2'] > t['co2_max']:
+        alerts.append("High CO2 Level")
+        recommendations.append("Increase fresh air intake")
+        should_notify = True
+        notification_message = f"CO2: {latest['co2']:.0f} ppm (threshold: {t['co2_max']} ppm)"
     
-    if latest['feed_level'] < 25:
-        alerts.append("⚠️ **Low Feed**: Feed level below 25%")
-        recommendations.append("👉 Farmer: Refill feeders and check for spoilage")
+    if latest['water_level'] < t['water_min']:
+        alerts.append("Low Water Level")
+        recommendations.append("Farmer action: Refill water supply")
+        should_notify = True
+        notification_message = f"Water Level: {latest['water_level']:.1f}% (threshold: {t['water_min']}%)"
     
-    if latest['air_quality'] > 300:
-        alerts.append("⚠️ **Poor Air Quality**: Level above 300")
-        recommendations.append("👉 Ventilation and air circulation improved")
+    if latest['feed_level'] < t['feed_min']:
+        alerts.append("Low Feed Level")
+        recommendations.append("Farmer action: Refill feeders")
+        should_notify = True
+        notification_message = f"Feed Level: {latest['feed_level']:.1f}% (threshold: {t['feed_min']}%)"
     
     if prediction['status'] == 'Disease Risk':
-        alerts.append("🚨 **Disease Risk Detected**: AI predicts potential outbreak")
-        recommendations.append("👉 Alarm activated; consult veterinarian immediately")
+        alerts.append("🚨 Disease Risk Detected")
+        recommendations.append("Notify veterinarian immediately")
+        recommendations.append(f"Veterinarian: {st.session_state.vet_name} ({st.session_state.vet_phone})")
+        should_notify = True
+        notification_message = f"Disease Risk detected! Confidence: {prediction['confidence']:.1f}%"
     
+    # Send notifications if needed
+    if should_notify and notification_message:
+        subject = f"ALERT: {st.session_state.farm_name} - {alerts[0] if alerts else 'Condition Alert'}"
+        message = f"""
+Farm: {st.session_state.farm_name}
+Birds: {st.session_state.bird_count} ({st.session_state.bird_type} - {st.session_state.bird_age})
+Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Status: {prediction['status']}
+
+Alerts:
+{chr(10).join('- ' + a for a in alerts)}
+
+Recommendations:
+{chr(10).join('- ' + r for r in recommendations)}
+
+Current Readings:
+- Temperature: {latest['temperature']:.1f}°C
+- Humidity: {latest['humidity']:.1f}%
+- Ammonia: {latest['ammonia']:.1f} ppm
+- CO2: {latest['co2']:.0f} ppm
+- Water Level: {latest['water_level']:.1f}%
+- Feed Level: {latest['feed_level']:.1f}%
+
+This is an automated alert from the Smart Poultry Monitoring System.
+"""
+        
+        # Send to farmer
+        send_notification("Farmer", st.session_state.farmer_name, 
+                         st.session_state.farmer_email, st.session_state.farmer_phone,
+                         subject, message)
+        
+        # Send to vet if disease risk
+        if prediction['status'] == 'Disease Risk':
+            send_notification("Veterinarian", st.session_state.vet_name,
+                             st.session_state.vet_email, st.session_state.vet_phone,
+                             f"URGENT: {subject}", message)
+        elif "Dangerous" in notification_message or "Ammonia" in notification_message:
+            send_notification("Veterinarian", st.session_state.vet_name,
+                             st.session_state.vet_email, st.session_state.vet_phone,
+                             f"ALERT: {subject}", message)
+    
+    # Display alerts
     if len(alerts) == 0:
-        st.success("✅ **All Clear**: All conditions are within normal range. System is maintaining optimal environment.")
+        st.success("✅ All conditions are within normal range. System is maintaining optimal environment.")
     else:
         for alert in alerts:
-            if "🚨" in alert:
-                st.error(alert)
-            elif "⚠️" in alert:
-                st.warning(alert)
+            if "Disease" in alert or "Dangerous" in alert:
+                st.error(f"🚨 {alert}")
+            elif "Low" in alert:
+                st.warning(f"⚠️ {alert}")
             else:
-                st.info(alert)
+                st.info(f"ℹ️ {alert}")
+        
         if recommendations:
-            st.markdown("#### 📋 Actions Taken / Recommendations:")
+            st.markdown("**Recommended Actions:**")
             for rec in set(recommendations):
                 if "Farmer" in rec:
                     st.warning(rec)
+                elif "Veterinarian" in rec:
+                    st.info(rec)
                 else:
-                    st.success(rec)
+                    st.success(f"✓ {rec}")
 
 with col_log:
-    st.markdown("### 📋 System Action Log")
-    st.caption("Recent automated actions and data logging events")
+    st.markdown("#### System Activity")
+    
+    st.markdown("**Action Log**")
     if len(st.session_state.action_log) == 0:
         st.info("No actions logged yet.")
     else:
-        for entry in st.session_state.action_log[:10]:
+        for entry in st.session_state.action_log[:8]:
             st.markdown(f'<div class="log-entry">{entry}</div>', unsafe_allow_html=True)
+    
     st.markdown("---")
-    st.markdown("#### 📤 Data Logging")
-    st.info(f"📊 Data points logged to Google Sheets: {st.session_state.data_logged}")
-    if st.button("📝 Simulate Log Now"):
-        log_to_google_sheets(latest)
+    
+    st.markdown("**Recent Notifications**")
+    if len(st.session_state.notifications_sent) == 0:
+        st.info("No notifications sent yet.")
+    else:
+        for notif in st.session_state.notifications_sent[:5]:
+            st.markdown(f"""
+            <div class="log-entry">
+                📧 {notif['timestamp']} - {notif['recipient_type']}: {notif['recipient_name']}
+                <br><span style="font-size:0.75rem;color:#6c757d;">{notif['subject'][:40]}...</span>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.markdown("#### Data Logging")
+    st.info(f"Data points logged: {st.session_state.data_logged}")
+    if st.button("📝 Simulate Data Log"):
+        st.session_state.data_logged += 1
+        log_action(f"Data point logged (ID: {st.session_state.data_logged})")
         st.rerun()
 
-# Footer
-st.markdown("---")
-st.markdown(f"""
-<center>
-    <p>🐔 Smart Poultry House Monitoring System v2.0 | Powered by AI & IoT</p>
-    <p style="color: gray; font-size: 0.8rem;">
-        Data updated in real-time | Last update: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-    </p>
-    <p style="color: gray; font-size: 0.7rem;">
-        Total Records: {len(st.session_state.data)} | 
-        Disease Risk Events: {len(st.session_state.data[st.session_state.data['risk_label'] == 2])}
-    </p>
-</center>
-""", unsafe_allow_html=True)
+# ================== FOOTER ==================
+st.markdown("""
+<div class="footer">
+    Smart Poultry House Monitoring System v2.0 | AI-Powered Environmental Control<br>
+    Data updated in real-time | Last update: {timestamp} | Total Records: {records}
+</div>
+""".format(
+    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    records=len(st.session_state.data)
+), unsafe_allow_html=True)
