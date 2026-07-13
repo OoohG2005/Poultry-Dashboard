@@ -170,37 +170,40 @@ st.markdown("""
         margin-bottom: 0.5rem;
     }
     
-    /* Status Boxes */
+    /* Status Boxes - Full width */
     .status-healthy {
         background: linear-gradient(135deg, #27ae60, #2ecc71);
-        padding: 1rem;
+        padding: 1.2rem;
         border-radius: 12px;
         color: white;
         text-align: center;
+        width: 100%;
     }
     .status-warning {
         background: linear-gradient(135deg, #f39c12, #f1c40f);
-        padding: 1rem;
+        padding: 1.2rem;
         border-radius: 12px;
         color: #1a1a2e;
         text-align: center;
+        width: 100%;
     }
     .status-danger {
         background: linear-gradient(135deg, #e74c3c, #c0392b);
-        padding: 1rem;
+        padding: 1.2rem;
         border-radius: 12px;
         color: white;
         text-align: center;
+        width: 100%;
     }
     .status-text {
-        font-size: 1.2rem;
+        font-size: 1.5rem;
         font-weight: 700;
         margin: 0;
     }
     .status-sub {
-        font-size: 0.8rem;
+        font-size: 0.9rem;
         opacity: 0.9;
-        margin: 0;
+        margin: 0.2rem 0 0 0;
     }
     
     /* Sensor Mini Cards */
@@ -396,8 +399,6 @@ def render_nav():
 latest = st.session_state.latest_reading
 prediction = st.session_state.predictor.predict(latest)
 actuator_states = get_actuator_states(latest, st.session_state.thresholds)
-health_score = 100 - (prediction['probabilities']['Disease Risk'] / 1)
-health_score = max(0, min(100, health_score))
 
 # ==================== APP HEADER ====================
 st.markdown(f"""
@@ -408,42 +409,16 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ==================== TOP ROW: Status + Health Gauge (Right) ====================
-col_status, col_gauge = st.columns([1, 0.8])
-
-with col_status:
-    status_icon = "✅" if prediction['status'] == 'Healthy' else ("⚠️" if prediction['status'] == 'Warning' else "🚨")
-    status_class = "status-healthy" if prediction['status'] == 'Healthy' else ("status-warning" if prediction['status'] == 'Warning' else "status-danger")
-    st.markdown(f"""
-    <div class="{status_class}">
-        <div class="status-text">{status_icon} {prediction['status']}</div>
-        <div class="status-sub">Confidence: {prediction['confidence']:.1f}%</div>
-        <div class="status-sub">{datetime.now().strftime('%H:%M:%S')}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col_gauge:
-    # Health Gauge on the right
-    fig_gauge = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=health_score,
-        title={'text': "Health Score", 'font': {'size': 14}},
-        gauge={
-            'axis': {'range': [0, 100]},
-            'steps': [
-                {'range': [0, 40], 'color': "#27ae60"},
-                {'range': [40, 70], 'color': "#f39c12"},
-                {'range': [70, 100], 'color': "#e74c3c"}
-            ],
-            'threshold': {
-                'line': {'color': "red", 'width': 4},
-                'thickness': 0.75,
-                'value': 80
-            }
-        }
-    ))
-    fig_gauge.update_layout(height=150, margin=dict(l=10, r=10, t=40, b=10))
-    st.plotly_chart(fig_gauge, use_container_width=True)
+# ==================== TOP ROW: STATUS ONLY (NO GAUGE) ====================
+status_icon = "✅" if prediction['status'] == 'Healthy' else ("⚠️" if prediction['status'] == 'Warning' else "🚨")
+status_class = "status-healthy" if prediction['status'] == 'Healthy' else ("status-warning" if prediction['status'] == 'Warning' else "status-danger")
+st.markdown(f"""
+<div class="{status_class}">
+    <div class="status-text">{status_icon} {prediction['status']}</div>
+    <div class="status-sub">Confidence: {prediction['confidence']:.1f}%</div>
+    <div class="status-sub">{datetime.now().strftime('%H:%M:%S')}</div>
+</div>
+""", unsafe_allow_html=True)
 
 # ==================== PAGE RENDER ====================
 page = st.session_state.page
