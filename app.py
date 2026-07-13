@@ -14,9 +14,18 @@ from model import PoultryDiseasePredictor
 # ==================== PAGE CONFIG ====================
 st.set_page_config(
     page_title="Smart Poultry Monitoring System",
-    page_icon="🐔",
     layout="wide",
     initial_sidebar_state="collapsed"
+)
+
+# ==================== SCROLL TO TOP ON PAGE LOAD ====================
+st.markdown(
+    """
+    <script>
+        window.scrollTo(0, 0);
+    </script>
+    """,
+    unsafe_allow_html=True
 )
 
 # ==================== SESSION STATE ====================
@@ -147,9 +156,10 @@ st.markdown("""
         font-weight: 300;
     }
     .app-header .farm-name {
-        font-size: 0.9rem;
-        opacity: 0.7;
-        margin-top: 0.2rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+        opacity: 0.9;
+        margin-top: 0.4rem;
     }
     
     /* Cards */
@@ -403,14 +413,14 @@ actuator_states = get_actuator_states(latest, st.session_state.thresholds)
 # ==================== APP HEADER ====================
 st.markdown(f"""
 <div class="app-header">
-    <h1>🐔 Smart Poultry House Monitoring System</h1>
+    <h1>Smart Poultry House Monitoring System</h1>
     <div class="subtitle">AI-Powered Environmental Monitoring & Disease Prediction</div>
-    <div class="farm-name">{st.session_state.farm_name} | {st.session_state.bird_count} birds | {st.session_state.bird_age}</div>
+    <div class="farm-name">{st.session_state.farm_name}</div>
 </div>
 """, unsafe_allow_html=True)
 
 # ==================== TOP ROW: STATUS ONLY (NO GAUGE) ====================
-status_icon = "✅" if prediction['status'] == 'Healthy' else ("⚠️" if prediction['status'] == 'Warning' else "🚨")
+status_icon = "." if prediction['status'] == 'Healthy' else ("⚠️" if prediction['status'] == 'Warning' else "🚨")
 status_class = "status-healthy" if prediction['status'] == 'Healthy' else ("status-warning" if prediction['status'] == 'Warning' else "status-danger")
 st.markdown(f"""
 <div class="{status_class}">
@@ -494,7 +504,7 @@ if page == "Home":
         if len(alerts) > 3:
             st.caption(f"+ {len(alerts)-3} more alerts...")
     else:
-        st.success("✅ All clear! No alerts.")
+        st.success(" All clear! No alerts.")
 
 elif page == "Sensors":
     st.markdown('<div class="card-title">All Sensors</div>', unsafe_allow_html=True)
@@ -529,22 +539,22 @@ elif page == "Sensors":
         </div>
         """, unsafe_allow_html=True)
     
-    # Trends
-    st.markdown('<div class="card-title">24-Hour Trends</div>', unsafe_allow_html=True)
+    # Trends - UPDATED TO DISCRETE (STEP LINES)
+    st.markdown('<div class="card-title">24-Hour Trends (Discrete Steps)</div>', unsafe_allow_html=True)
     recent_data = get_recent_data(st.session_state.data, hours=24)
     
-    # Mini trend for temperature
+    # Temperature trend - step line
     fig = px.line(recent_data, x='timestamp', y='temperature',
                   title='Temperature Trend', labels={'value': '°C', 'timestamp': ''})
+    fig.update_traces(line=dict(color='#e74c3c', width=2), line_shape='hv')
     fig.update_layout(height=150, margin=dict(l=0, r=0, t=30, b=0), showlegend=False)
-    fig.update_traces(line=dict(color='#e74c3c', width=2))
     st.plotly_chart(fig, use_container_width=True)
     
-    # Mini trend for humidity
+    # Humidity trend - step line
     fig = px.line(recent_data, x='timestamp', y='humidity',
                   title='Humidity Trend', labels={'value': '%', 'timestamp': ''})
+    fig.update_traces(line=dict(color='#2980b9', width=2), line_shape='hv')
     fig.update_layout(height=150, margin=dict(l=0, r=0, t=30, b=0), showlegend=False)
-    fig.update_traces(line=dict(color='#2980b9', width=2))
     st.plotly_chart(fig, use_container_width=True)
 
 elif page == "Actuators":
