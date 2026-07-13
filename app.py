@@ -14,9 +14,20 @@ from model import PoultryDiseasePredictor
 # ==================== PAGE CONFIG ====================
 st.set_page_config(
     page_title="Smart Poultry Monitoring System",
+    page_icon="🐔",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# ==================== PWA META TAGS & MANIFEST ====================
+# Inject PWA meta tags and manifest (base64 encoded JSON)
+st.markdown("""
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiU21hcnQgUG91bHRyeSBNb25pdG9yaW5nIFN5c3RlbSIsInNob3J0X25hbWUiOiJTbWFydCBQb3VsdHJ5Iiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxYTNjNWUiLCJ0aGVtZV9jb2xvciI6IiMxYTNjNWUifQ==">
+""", unsafe_allow_html=True)
 
 # ==================== SCROLL TO TOP ON PAGE LOAD ====================
 st.markdown(
@@ -420,7 +431,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==================== TOP ROW: STATUS ONLY (NO GAUGE) ====================
-status_icon = "." if prediction['status'] == 'Healthy' else ("⚠️" if prediction['status'] == 'Warning' else "🚨")
+status_icon = "✅" if prediction['status'] == 'Healthy' else ("⚠️" if prediction['status'] == 'Warning' else "🚨")
 status_class = "status-healthy" if prediction['status'] == 'Healthy' else ("status-warning" if prediction['status'] == 'Warning' else "status-danger")
 st.markdown(f"""
 <div class="{status_class}">
