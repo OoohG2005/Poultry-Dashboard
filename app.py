@@ -13,7 +13,7 @@ from model import PoultryDiseasePredictor
 
 # ==================== PAGE CONFIG ====================
 st.set_page_config(
-    page_title="Smart Poultry",
+    page_title="Smart Poultry Monitoring System",
     page_icon="🐔",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -95,7 +95,7 @@ st.markdown("""
     .stDeployButton {display: none;}
     .stAppToolbar {display: none;}
     
-    /* Responsive container: phone-like on small screens, full on large */
+    /* Responsive container */
     .stApp {
         background: #f8f9fa;
         height: 100vh;
@@ -126,22 +126,30 @@ st.markdown("""
     /* App Header */
     .app-header {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
         padding: 0.8rem 0.5rem;
         background: #1a3c5e;
         color: white;
         border-radius: 0 0 16px 16px;
         margin-bottom: 1rem;
+        text-align: center;
     }
     .app-header h1 {
-        font-size: 1.2rem;
+        font-size: 1.4rem;
         margin: 0;
-        font-weight: 600;
+        font-weight: 700;
+        letter-spacing: 0.5px;
     }
-    .app-header span {
+    .app-header .subtitle {
         font-size: 0.8rem;
-        opacity: 0.8;
+        opacity: 0.85;
+        margin: 0.2rem 0 0 0;
+        font-weight: 300;
+    }
+    .app-header .farm-name {
+        font-size: 0.9rem;
+        opacity: 0.7;
+        margin-top: 0.2rem;
     }
     
     /* Cards */
@@ -363,32 +371,6 @@ def get_sensor_status(value, good_range):
     else:
         return 'good'
 
-# ==================== DATA ====================
-latest = st.session_state.latest_reading
-prediction = st.session_state.predictor.predict(latest)
-actuator_states = get_actuator_states(latest, st.session_state.thresholds)
-health_score = 100 - (prediction['probabilities']['Disease Risk'] / 1)
-health_score = max(0, min(100, health_score))
-
-# ==================== APP HEADER ====================
-st.markdown(f"""
-<div class="app-header">
-    <div>
-        <h1>🐔 Smart Poultry</h1>
-        <span>{st.session_state.farm_name}</span>
-    </div>
-    <div style="text-align:right;">
-        <div style="font-size:0.8rem;font-weight:600;">{prediction['status']}</div>
-        <div style="font-size:0.6rem;opacity:0.7;">{datetime.now().strftime('%H:%M')}</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ==================== NAVIGATION BAR (BOTTOM) ====================
-# We'll place the navigation buttons at the bottom using st.columns.
-# But we need to render them after the page content.
-# We'll define a function to render the nav bar at the bottom.
-
 def render_nav():
     nav_items = [
         {"label": "Home", "icon": "🏠", "page": "Home"},
@@ -401,7 +383,6 @@ def render_nav():
     for col, item in zip(cols, nav_items):
         with col:
             active = st.session_state.page == item["page"]
-            btn_style = "nav-btn active" if active else "nav-btn"
             if st.button(
                 f"{item['icon']}\n{item['label']}",
                 key=f"nav_{item['page']}",
@@ -410,31 +391,64 @@ def render_nav():
             ):
                 st.session_state.page = item["page"]
                 st.rerun()
-            # We can also display label separately, but button text with newline works.
+
+# ==================== DATA ====================
+latest = st.session_state.latest_reading
+prediction = st.session_state.predictor.predict(latest)
+actuator_states = get_actuator_states(latest, st.session_state.thresholds)
+health_score = 100 - (prediction['probabilities']['Disease Risk'] / 1)
+health_score = max(0, min(100, health_score))
+
+# ==================== APP HEADER ====================
+st.markdown(f"""
+<div class="app-header">
+    <h1>🐔 Smart Poultry House Monitoring System</h1>
+    <div class="subtitle">AI-Powered Environmental Monitoring & Disease Prediction</div>
+    <div class="farm-name">{st.session_state.farm_name} | {st.session_state.bird_count} birds | {st.session_state.bird_age}</div>
+</div>
+""", unsafe_allow_html=True)
+
+# ==================== TOP ROW: Status + Health Gauge (Right) ====================
+col_status, col_gauge = st.columns([1, 0.8])
+
+with col_status:
+    status_icon = "✅" if prediction['status'] == 'Healthy' else ("⚠️" if prediction['status'] == 'Warning' else "🚨")
+    status_class = "status-healthy" if prediction['status'] == 'Healthy' else ("status-warning" if prediction['status'] == 'Warning' else "status-danger")
+    st.markdown(f"""
+    <div class="{status_class}">
+        <div class="status-text">{status_icon} {prediction['status']}</div>
+        <div class="status-sub">Confidence: {prediction['confidence']:.1f}%</div>
+        <div class="status-sub">{datetime.now().strftime('%H:%M:%S')}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col_gauge:
+    # Health Gauge on the right
+    fig_gauge = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=health_score,
+        title={'text': "Health Score", 'font': {'size': 14}},
+        gauge={
+            'axis': {'range': [0, 100]},
+            'steps': [
+                {'range': [0, 40], 'color': "#27ae60"},
+                {'range': [40, 70], 'color': "#f39c12"},
+                {'range': [70, 100], 'color': "#e74c3c"}
+            ],
+            'threshold': {
+                'line': {'color': "red", 'width': 4},
+                'thickness': 0.75,
+                'value': 80
+            }
+        }
+    ))
+    fig_gauge.update_layout(height=150, margin=dict(l=10, r=10, t=40, b=10))
+    st.plotly_chart(fig_gauge, use_container_width=True)
 
 # ==================== PAGE RENDER ====================
 page = st.session_state.page
 
 if page == "Home":
-    # Health Score
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f"""
-        <div class="card" style="text-align:center;">
-            <div style="font-size:0.7rem;color:#7f8c8d;">Health Score</div>
-            <div style="font-size:2.2rem;font-weight:700;color:{'#27ae60' if health_score > 70 else '#f39c12' if health_score > 40 else '#e74c3c'};">{health_score:.0f}%</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        status_icon = "✅" if prediction['status'] == 'Healthy' else ("⚠️" if prediction['status'] == 'Warning' else "🚨")
-        status_class = "status-healthy" if prediction['status'] == 'Healthy' else ("status-warning" if prediction['status'] == 'Warning' else "status-danger")
-        st.markdown(f"""
-        <div class="{status_class}">
-            <div class="status-text">{status_icon} {prediction['status']}</div>
-            <div class="status-sub">{prediction['confidence']:.1f}% confidence</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
     # Quick Stats
     st.markdown('<div class="card-title">Quick Stats</div>', unsafe_allow_html=True)
     col1, col2, col3, col4 = st.columns(4)
@@ -710,13 +724,12 @@ elif page == "Settings":
                 st.rerun()
 
 # ==================== BOTTOM NAVIGATION ====================
-# Render navigation at the bottom
 st.markdown("---")
 render_nav()
 
 # ==================== FOOTER ====================
 st.markdown("""
 <div style="text-align:center;font-size:0.6rem;color:#95a5a6;padding:0.5rem 0;">
-    Smart Poultry v2.0 | AI-Powered
+    Smart Poultry Monitoring System v2.0 | AI-Powered
 </div>
 """, unsafe_allow_html=True)
