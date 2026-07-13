@@ -20,7 +20,6 @@ st.set_page_config(
 )
 
 # ==================== PWA META TAGS & MANIFEST ====================
-# Inject PWA meta tags and manifest (base64 encoded JSON)
 st.markdown("""
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -108,22 +107,39 @@ if 'thresholds' not in st.session_state:
 # ==================== CSS: RESPONSIVE APP STYLE ====================
 st.markdown("""
 <style>
-    /* Hide Streamlit default elements */
+    /* ===== COMPLETELY HIDE ALL STREAMLIT UI ===== */
+    /* Hide menu, header, footer, deploy button, toolbar, and everything else */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     .stDeployButton {display: none;}
     .stAppToolbar {display: none;}
     
-    /* Responsive container */
+    /* ---- ADDED: Remove "Manage app" text and toolbar ---- */
+    [data-testid="stToolbar"] {
+        display: none !important;
+    }
+    .stAppHeader {
+        display: none !important;
+    }
+    .stApp > header {
+        display: none !important;
+    }
+    
+    /* Remove extra padding caused by hidden header */
+    .stApp > div:first-child {
+        padding: 0 !important;
+    }
+    .stMain {
+        padding-top: 0 !important;
+    }
+    
+    /* ---- Responsive container ---- */
     .stApp {
         background: #f8f9fa;
         height: 100vh;
         overflow-y: auto;
         overflow-x: hidden;
-    }
-    .stApp > div:first-child {
-        padding: 0 !important;
     }
     .block-container {
         padding: 0.8rem 1rem 5.5rem 1rem !important;
@@ -143,7 +159,7 @@ st.markdown("""
     /* Hide scrollbar */
     ::-webkit-scrollbar {width: 0; background: transparent;}
     
-    /* App Header */
+    /* ---- App Header ---- */
     .app-header {
         display: flex;
         flex-direction: column;
@@ -173,7 +189,7 @@ st.markdown("""
         margin-top: 0.4rem;
     }
     
-    /* Cards */
+    /* ---- Cards ---- */
     .card {
         background: white;
         border-radius: 12px;
@@ -191,7 +207,7 @@ st.markdown("""
         margin-bottom: 0.5rem;
     }
     
-    /* Status Boxes - Full width */
+    /* ---- Status Boxes ---- */
     .status-healthy {
         background: linear-gradient(135deg, #27ae60, #2ecc71);
         padding: 1.2rem;
@@ -227,7 +243,7 @@ st.markdown("""
         margin: 0.2rem 0 0 0;
     }
     
-    /* Sensor Mini Cards */
+    /* ---- Sensor Mini Cards ---- */
     .sensor-mini {
         background: white;
         border-radius: 10px;
@@ -260,7 +276,7 @@ st.markdown("""
     .dot-warning { background: #f39c12; }
     .dot-danger { background: #e74c3c; }
     
-    /* Actuator Badge */
+    /* ---- Actuator Badge ---- */
     .actuator-badge {
         display: inline-block;
         padding: 0.3rem 0.8rem;
@@ -278,7 +294,7 @@ st.markdown("""
         color: white;
     }
     
-    /* Notification */
+    /* ---- Notification ---- */
     .notif-item {
         background: #f8f9fa;
         padding: 0.5rem;
@@ -292,7 +308,7 @@ st.markdown("""
         color: #95a5a6;
     }
     
-    /* Inputs */
+    /* ---- Inputs & Buttons ---- */
     .stTextInput > div > div > input {
         border-radius: 8px !important;
         border: 1px solid #ddd !important;
@@ -316,12 +332,12 @@ st.markdown("""
         border-radius: 8px !important;
     }
     
-    /* Plotly responsive */
+    /* ---- Plotly ---- */
     .js-plotly-plot .plotly .main-svg {
         border-radius: 10px !important;
     }
     
-    /* Bottom navigation buttons */
+    /* ---- Bottom Navigation ---- */
     .nav-btn {
         background: transparent !important;
         border: none !important;
@@ -430,8 +446,8 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ==================== TOP ROW: STATUS ONLY (NO GAUGE) ====================
-status_icon = "✅" if prediction['status'] == 'Healthy' else ("⚠️" if prediction['status'] == 'Warning' else "🚨")
+# ==================== TOP ROW: STATUS ====================
+status_icon = " " if prediction['status'] == 'Healthy' else (" " if prediction['status'] == 'Warning' else " ")
 status_class = "status-healthy" if prediction['status'] == 'Healthy' else ("status-warning" if prediction['status'] == 'Warning' else "status-danger")
 st.markdown(f"""
 <div class="{status_class}">
@@ -445,7 +461,6 @@ st.markdown(f"""
 page = st.session_state.page
 
 if page == "Home":
-    # Quick Stats
     st.markdown('<div class="card-title">Quick Stats</div>', unsafe_allow_html=True)
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -458,7 +473,6 @@ if page == "Home":
         active_actuators = sum(1 for s in actuator_states.values() if s == 'ON')
         st.markdown(f'<div class="card" style="text-align:center;padding:0.5rem;"><div style="font-size:0.6rem;color:#7f8c8d;">Active</div><div style="font-weight:700;">{active_actuators}/6</div></div>', unsafe_allow_html=True)
     
-    # Key Sensors (Temperature, Humidity, Ammonia)
     st.markdown('<div class="card-title">Key Readings</div>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -492,7 +506,6 @@ if page == "Home":
         </div>
         """, unsafe_allow_html=True)
     
-    # Active Alerts
     st.markdown('<div class="card-title">Recent Alerts</div>', unsafe_allow_html=True)
     alerts = []
     t = st.session_state.thresholds
@@ -550,18 +563,15 @@ elif page == "Sensors":
         </div>
         """, unsafe_allow_html=True)
     
-    # Trends - UPDATED TO DISCRETE (STEP LINES)
     st.markdown('<div class="card-title">24-Hour Trends (Discrete Steps)</div>', unsafe_allow_html=True)
     recent_data = get_recent_data(st.session_state.data, hours=24)
     
-    # Temperature trend - step line
     fig = px.line(recent_data, x='timestamp', y='temperature',
                   title='Temperature Trend', labels={'value': '°C', 'timestamp': ''})
     fig.update_traces(line=dict(color='#e74c3c', width=2), line_shape='hv')
     fig.update_layout(height=150, margin=dict(l=0, r=0, t=30, b=0), showlegend=False)
     st.plotly_chart(fig, use_container_width=True)
     
-    # Humidity trend - step line
     fig = px.line(recent_data, x='timestamp', y='humidity',
                   title='Humidity Trend', labels={'value': '%', 'timestamp': ''})
     fig.update_traces(line=dict(color='#2980b9', width=2), line_shape='hv')
@@ -582,7 +592,6 @@ elif page == "Actuators":
         </div>
         """, unsafe_allow_html=True)
     
-    # Manual Control (Simulated)
     st.markdown('<div class="card-title">Manual Control</div>', unsafe_allow_html=True)
     st.caption("Simulated manual override (for demonstration)")
     col1, col2 = st.columns(2)
@@ -595,7 +604,6 @@ elif page == "Actuators":
             log_action("Manual: Ventilation toggled")
             st.toast("Ventilation toggled (simulated)")
     
-    # Thresholds Display
     st.markdown('<div class="card-title">Current Thresholds</div>', unsafe_allow_html=True)
     t = st.session_state.thresholds
     st.markdown(f"""
@@ -614,7 +622,6 @@ elif page == "Actuators":
 elif page == "Alerts":
     st.markdown('<div class="card-title">Notifications</div>', unsafe_allow_html=True)
     
-    # Check for new alerts
     alerts = []
     t = st.session_state.thresholds
     if latest['temperature'] > t['temp_max']:
@@ -635,7 +642,7 @@ elif page == "Alerts":
         for alert in alerts:
             st.error(f"⚠️ {alert}")
     else:
-        st.success("✅ No active alerts")
+        st.success(" No active alerts")
     
     st.markdown("---")
     st.markdown("#### Recent Notifications")
@@ -678,7 +685,7 @@ elif page == "Settings":
             st.session_state.bird_age = bird_age
             st.session_state.bird_type = bird_type
             log_action("Farm profile updated")
-            st.success("✅ Profile saved!")
+            st.success("Profile saved!")
             st.rerun()
         
         st.markdown("---")
@@ -702,7 +709,7 @@ elif page == "Settings":
             st.session_state.vet_email = vet_email
             st.session_state.vet_phone = vet_phone
             log_action("Contacts updated")
-            st.success("✅ Contacts saved!")
+            st.success("Profiles saved!")
             st.rerun()
         
         st.markdown("---")
